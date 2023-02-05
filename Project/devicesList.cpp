@@ -1,4 +1,3 @@
-// g++ devicesList.cpp -lpcap
 #include <iostream>
 #include <pcap.h>
 #include <netinet/in.h>
@@ -55,3 +54,6 @@ void dump_addresses(pcap_addr_t *addresses)
         addr=addr->next;
     }
 }
+
+
+// g++ devicesList.cpp -lpcap
