@@ -32,7 +32,7 @@ int main()
     device=devices;
     if(device==NULL)
     {
-        cout<<"Couldn't find any devices"<<endl;
+        cout<<"Couldn't find any device"<<endl;
         return -1;
     }
     
