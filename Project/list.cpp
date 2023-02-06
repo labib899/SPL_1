@@ -7,7 +7,7 @@
 using namespace std;
 
 
-// function to display the list of network interfaces
+// function to display the list of devices
 void list();
 void dump_addresses(pcap_addr_t *addresses);
 
@@ -34,7 +34,7 @@ void list()
     }
     else
     {
-        cout<<"List of network interfaces:"<<endl<<endl;
+        cout<<"List of devices:"<<endl<<endl;
         int i=1;
         for(device=interface;device!=NULL;device=device->next,i++)
         {
