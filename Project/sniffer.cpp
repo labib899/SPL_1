@@ -12,6 +12,34 @@ using namespace std;
 
 
 void callback(u_char *user,const struct pcap_pkthdr *header,const u_char *packet);
+// TCP header structure
+struct tcp_header {
+    unsigned short int source_port;
+    unsigned short int dest_port;
+    unsigned int sequence_num;
+    unsigned int ack_num;
+    unsigned char header_len : 4; // number of 32-bit words in the header
+    unsigned char reserved : 6; // reserved for future use
+    unsigned char urg_flag : 1; // urgent pointer field is significant
+    unsigned char ack_flag : 1; // acknowledgement field is significant
+    unsigned char psh_flag : 1; // push function
+    unsigned char rst_flag : 1; // reset the connection
+    unsigned char syn_flag : 1; // synchronize sequence numbers
+    unsigned char fin_flag : 1; // no more data from sender
+    unsigned short int window_size;
+    unsigned short int checksum;
+    unsigned short int urgent_ptr;
+};
+
+// UDP header structure
+struct udp_header {
+    unsigned short int source_port;
+    unsigned short int dest_port;
+    unsigned short int length;
+    unsigned short int checksum;
+};
+
+
 
 
 
@@ -70,10 +98,36 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
         if(packet[i]==6)
         {
             protocol="TCP";
+            // extracting the TCP header from the packet
+            const struct tcp_header* tcp = (const struct tcp_header*)(packet + i + sizeof(uint8_t));
+            // printing the TCP header fields
+            cout << "TCP header:" << endl;
+            cout << "  Source port: " << tcp->source_port << endl;
+            cout << "  Destination port: " << tcp->dest_port << endl;
+            cout << "  Sequence number: " << tcp->sequence_num << endl;
+            cout << "  Acknowledgement number: " << tcp->ack_num << endl;
+            cout << "  Header length: " << tcp->header_len << endl;
+            cout << "  Urgent pointer flag: " << tcp->urg_flag << endl;
+            cout << "  Acknowledgement flag: " << tcp->ack_flag << endl;
+            cout << "  Push flag: " << tcp->psh_flag << endl;
+            cout << "  Reset flag: " << tcp->rst_flag << endl;
+            cout << "  Synchronize flag: " << tcp->syn_flag << endl;
+            cout << "  Finish flag: " << tcp->fin_flag << endl;
+            cout << "  Window size: " << tcp->window_size << endl;
+            cout << "  Checksum: " << tcp->checksum << endl;
+            cout << "  Urgent pointer: " << tcp->urgent_ptr << endl;
         }
         else if(packet[i]==17)
         {
             protocol="UDP";
+            // extracting the UDP header from the packet
+            const struct udp_header* udp = (const struct udp_header*)(packet + i + sizeof(uint8_t));
+            // printing the UDP header fields
+            cout << "UDP header:" << endl;
+            cout << "  Source port: " << udp->source_port << endl;
+            cout << "  Destination port: " << udp->dest_port << endl;
+            cout << "  Length: " << udp->length << endl;
+            cout << "  Checksum: " << udp->checksum << endl;
         }
 
         // updating the count for the protocol
@@ -87,6 +141,7 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
         cout<<"  "<<p.F<<": "<<p.S<<endl;
     }
 }
+
 
 
 
@@ -107,3 +162,4 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
  */
 
 // g++ -std=c++2a sniffer.cpp -lpcap
+
