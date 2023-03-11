@@ -41,7 +41,7 @@ void list()
         {  
             printf("%d: %s: \n",i,device->name);
             cout<<"\tStatus: ";
-            if((device->flags & PCAP_IF_UP))
+            if(device->flags & PCAP_IF_UP)
             {   
                 cout<<"Active"<<endl;
             }
