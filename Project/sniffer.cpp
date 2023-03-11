@@ -6,37 +6,37 @@
 
 using namespace std;
 
-#define F first
-#define S second
+#define ff first
+#define ss second
 
 
 
 void callback(u_char *user,const struct pcap_pkthdr *header,const u_char *packet);
-// TCP header structure
+// TCP header structure (connection oriented)
 struct tcp_header {
-    unsigned short int source_port;
-    unsigned short int dest_port;
-    unsigned int sequence_num;
-    unsigned int ack_num;
-    unsigned char header_len : 4; // number of 32-bit words in the header
-    unsigned char reserved : 6; // reserved for future use
+    unsigned short int source_port; // 16 bits
+    unsigned short int dest_port; // 16 bits
+    unsigned int sequence_num; // 32 bits
+    unsigned int ack_num; // 32 bits
+    unsigned char header_len : 4; // 4 bits
+    unsigned char reserved : 6; // 6 bits
     unsigned char urg_flag : 1; // urgent pointer field is significant
     unsigned char ack_flag : 1; // acknowledgement field is significant
     unsigned char psh_flag : 1; // push function
     unsigned char rst_flag : 1; // reset the connection
     unsigned char syn_flag : 1; // synchronize sequence numbers
     unsigned char fin_flag : 1; // no more data from sender
-    unsigned short int window_size;
-    unsigned short int checksum;
-    unsigned short int urgent_ptr;
+    unsigned short int window_size; // 16 bits
+    unsigned short int checksum; // 16 bits
+    unsigned short int urgent_ptr; // 16 bits
 };
 
-// UDP header structure
+// UDP header structure (connectionless)
 struct udp_header {
-    unsigned short int source_port;
-    unsigned short int dest_port;
-    unsigned short int length;
-    unsigned short int checksum;
+    unsigned short int source_port; // 2 bytes
+    unsigned short int dest_port; // 2 bytes
+    unsigned short int length; // 2 bytes
+    unsigned short int checksum; // 2 bytes
 };
 
 
@@ -63,7 +63,6 @@ int main()
         cout<<"Couldn't find any device"<<endl;
         return -1;
     }
-    
     // opening the device for packet sniffing
     pcap_t *handle=pcap_open_live(device->name,BUFSIZ,1,1000,errbuf);
     if(handle==NULL)
@@ -86,8 +85,11 @@ int main()
 
 
 
-
-void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *packet)
+/*  
+user = user defined data structure (not used), pcap_pkthdr = info about the packet,
+packet = pointer to the packet data
+*/
+void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *packet) 
 {
     map<string,int> protocols;
     // analyzing the packet
@@ -103,7 +105,7 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
             // printing the TCP header fields
             cout << "TCP header:" << endl;
             cout << "  Source port: " << tcp->source_port << endl;
-            cout << "  Destination port: " << tcp->dest_port << endl;
+            cout << "  Destination port: " << tcp->dest_port << endl;  
             cout << "  Sequence number: " << tcp->sequence_num << endl;
             cout << "  Acknowledgement number: " << tcp->ack_num << endl;
             cout << "  Header length: " << tcp->header_len << endl;
@@ -138,7 +140,7 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
     cout<<"Protocols: "<<endl;
     for(const auto &p:protocols)
     {
-        cout<<"  "<<p.F<<": "<<p.S<<endl;
+        cout<<"  "<<p.ff<<": "<<p.ss<<endl;
     }
 }
 
