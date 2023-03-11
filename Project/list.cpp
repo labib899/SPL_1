@@ -16,6 +16,7 @@ void dump_addresses(pcap_addr_t *addresses);
 int main()
 {
     list();
+
     return 0;
 }
 
@@ -37,10 +38,17 @@ void list()
         cout<<"List of devices:"<<endl<<endl;
         int i=1;
         for(device=interface;device!=NULL;device=device->next,i++)
-        {
+        {  
             printf("%d: %s: \n",i,device->name);
+            cout<<"\tStatus: ";
+            if((device->flags & PCAP_IF_UP))
+            {   
+                cout<<"Active"<<endl;
+            }
+            else cout<<"Inactive"<<endl;
+
             dump_addresses(device->addresses);
-            printf("\n");
+            cout<<endl;
         }
         return;
     }
