@@ -56,8 +56,10 @@ int main()
         return -1;
     }
     
-    // using the first device for packet sniffing
+    // using the first device for packet sniffing (en0)
     device=devices;
+    cout<<"Capturing packets with "<<device->name<<"..."<<endl;
+
     if(device==NULL)
     {
         cout<<"Couldn't find any device"<<endl;
@@ -71,8 +73,13 @@ int main()
         return -1;
     }
     
-    // starting the packet capture loop
-    pcap_loop(handle,-1,callback,NULL);
+    cout<<"Enter the number of packets to be captured: ";
+    int numOfPackets;
+    cin>>numOfPackets;
+    cout<<endl;
+    // starting the packet capture loop 
+    // -1 instead of numOfPackets to capture indefinitely
+    pcap_loop(handle,numOfPackets,callback,NULL);
     
     // closing the device
     pcap_close(handle);
@@ -90,13 +97,14 @@ user = user defined data structure (not used), pcap_pkthdr = info about the pack
 packet = pointer to the packet data
 */
 void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *packet) 
-{
+{   
+    cout<<"Packet Length: "<<header->len<<endl;
     map<string,int> protocols;
     // analyzing the packet
     for(int i=0;i<header->len;i++)
     {
         // extracting the protocol from the packet
-        string protocol = "unknown";
+        string protocol = "Unknown";
         if(packet[i]==6)
         {
             protocol="TCP";
@@ -117,7 +125,7 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
             cout << "  Finish flag: " << tcp->fin_flag << endl;
             cout << "  Window size: " << tcp->window_size << endl;
             cout << "  Checksum: " << tcp->checksum << endl;
-            cout << "  Urgent pointer: " << tcp->urgent_ptr << endl;
+            cout << "  Urgent pointer: " << tcp->urgent_ptr << endl<<endl;
         }
         else if(packet[i]==17)
         {
@@ -129,7 +137,7 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
             cout << "  Source port: " << udp->source_port << endl;
             cout << "  Destination port: " << udp->dest_port << endl;
             cout << "  Length: " << udp->length << endl;
-            cout << "  Checksum: " << udp->checksum << endl;
+            cout << "  Checksum: " << udp->checksum << endl<<endl;
         }
 
         // updating the count for the protocol
@@ -142,6 +150,7 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
     {
         cout<<"  "<<p.ff<<": "<<p.ss<<endl;
     }
+    cout<<endl<<endl;
 }
 
 
