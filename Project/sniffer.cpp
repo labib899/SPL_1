@@ -40,6 +40,24 @@ struct udp_header {
 };
 
 
+// ICMP header structure
+struct icmp_header {
+    uint8_t type;          // ICMP message type
+    uint8_t code;          // Sub-code associated with the message
+    uint16_t checksum;     // ICMP message checksum
+    union {
+        struct {
+            uint16_t id;    // ICMP identification field
+            uint16_t seq;   // ICMP sequence number field
+        } echo;             // Echo Request/Reply header
+        uint32_t gateway;   // Gateway address
+        struct {
+            uint16_t unused; // Unused field
+            uint16_t mtu;    // Path MTU discovery maximum segment size
+        } frag;             // Fragmentation header
+    } un;
+};
+
 
 
 
@@ -99,7 +117,20 @@ packet = pointer to the packet data
 void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *packet) 
 {   
     cout<<"Packet Length: "<<header->len<<endl;
+
+    // display the time stamp of the packet
+    cout << "Time stamp: " << header->ts.tv_sec << "." << header->ts.tv_usec << endl;
+
     map<string,int> protocols;
+
+
+    // for counting dropped packets
+    int drop_count = 0;
+    
+    if (header->len != header->caplen)
+    {
+        drop_count++;
+    }
     // analyzing the packet
     for(int i=0;i<header->len;i++)
     {
@@ -126,6 +157,26 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
             cout << "  Window size: " << tcp->window_size << endl;
             cout << "  Checksum: " << tcp->checksum << endl;
             cout << "  Urgent pointer: " << tcp->urgent_ptr << endl<<endl;
+
+
+            // printing the payload
+            const u_char *payload = packet + i + sizeof(uint8_t) + tcp->header_len*4;
+            // point to the location in memory where payload data starts
+            int payload_len = header->len - (i + sizeof(uint8_t) + tcp->header_len*4);
+            // payload len= header len - size of the header
+            if (payload_len > 0) 
+            {
+                cout << "Payload:" << endl;
+                for (int j = 0; j < payload_len; j++) 
+                {
+                    printf("%02x ", payload[j]);
+                    if ((j + 1) % 16 == 0) 
+                    {
+                        cout << endl;
+                    }
+                }
+                cout << endl<<endl<<endl;
+            }
         }
         else if(packet[i]==17)
         {
@@ -138,8 +189,57 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
             cout << "  Destination port: " << udp->dest_port << endl;
             cout << "  Length: " << udp->length << endl;
             cout << "  Checksum: " << udp->checksum << endl<<endl;
+
+
+            // printing the payload
+            const u_char *payload = packet + i + sizeof(uint8_t) + sizeof(struct udp_header);
+            int payload_len = header->len - (i + sizeof(uint8_t) + sizeof(struct udp_header));
+            if (payload_len > 0) 
+            {
+                cout << "Payload:" << endl;
+                for (int j = 0; j < payload_len; j++) 
+                {
+                    printf("%02x ", payload[j]);
+                    if ((j + 1) % 16 == 0) 
+                    {
+                        cout << endl;
+                    }
+                }
+                cout << endl<<endl<<endl;
+            }
         }
 
+        else if(packet[i]==1) 
+        {
+            protocol="ICMP";
+            // extracting the ICMP header from the packet
+            const struct icmp_header* icmp = (const struct icmp_header*)(packet + i + sizeof(uint8_t));
+            //printing the ICMP header fields
+            cout << "ICMP Header:" << endl;
+            cout << " Type: " << (int)icmp->type << endl;
+            cout << " Code: " << (int)icmp->code << endl;
+            cout << " Checksum: " << ntohs(icmp->checksum) << endl;
+            cout << " Identifier: " << ntohs(icmp->un.echo.id) << endl;
+            cout << " Sequence Number: " << ntohs(icmp->un.echo.seq) << endl<<endl;
+
+
+            // printing the payload
+            const u_char *payload = packet + i + sizeof(uint8_t) + sizeof(struct icmp_header);
+            int payload_len = header->len - (i + sizeof(uint8_t) + sizeof(struct icmp_header));
+            if (payload_len > 0) 
+            {
+                cout << "Payload:" << endl;
+                for (int j = 0; j < payload_len; j++) 
+                {
+                    printf("%02x ", payload[j]);
+                    if ((j + 1) % 16 == 0) 
+                    {
+                        cout << endl;
+                    }
+                }
+                cout << endl<<endl<<endl;
+            }
+        }
         // updating the count for the protocol
         protocols[protocol]++;
     }
@@ -150,7 +250,9 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
     {
         cout<<"  "<<p.ff<<": "<<p.ss<<endl;
     }
-    cout<<endl<<endl;
+
+    // display dropped packet count
+    cout << "Dropped packets: " << drop_count << endl<<endl<<endl;
 }
 
 
