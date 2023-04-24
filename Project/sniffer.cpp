@@ -2,61 +2,22 @@
 #include <pcap.h>
 #include <string>
 #include <map>
+#include "tcp_header.h"
+#include "udp_header.h"
+#include "icmp_header.h"
+#include "ip_header.h"
 
 
 using namespace std;
+
 
 #define ff first
 #define ss second
 
 
 
+
 void callback(u_char *user,const struct pcap_pkthdr *header,const u_char *packet);
-// TCP header structure (connection oriented)
-struct tcp_header {
-    unsigned short int source_port; // 16 bits
-    unsigned short int dest_port; // 16 bits
-    unsigned int sequence_num; // 32 bits
-    unsigned int ack_num; // 32 bits
-    unsigned char header_len : 4; // 4 bits
-    unsigned char reserved : 6; // 6 bits
-    unsigned char urg_flag : 1; // urgent pointer field is significant
-    unsigned char ack_flag : 1; // acknowledgement field is significant
-    unsigned char psh_flag : 1; // push function
-    unsigned char rst_flag : 1; // reset the connection
-    unsigned char syn_flag : 1; // synchronize sequence numbers
-    unsigned char fin_flag : 1; // no more data from sender
-    unsigned short int window_size; // 16 bits
-    unsigned short int checksum; // 16 bits
-    unsigned short int urgent_ptr; // 16 bits
-};
-
-// UDP header structure (connectionless)
-struct udp_header {
-    unsigned short int source_port; // 2 bytes
-    unsigned short int dest_port; // 2 bytes
-    unsigned short int length; // 2 bytes
-    unsigned short int checksum; // 2 bytes
-};
-
-
-// ICMP header structure
-struct icmp_header {
-    uint8_t type;          // ICMP message type
-    uint8_t code;          // Sub-code associated with the message
-    uint16_t checksum;     // ICMP message checksum
-    union {
-        struct {
-            uint16_t id;    // ICMP identification field
-            uint16_t seq;   // ICMP sequence number field
-        } echo;             // Echo Request/Reply header
-        uint32_t gateway;   // Gateway address
-        struct {
-            uint16_t unused; // Unused field
-            uint16_t mtu;    // Path MTU discovery maximum segment size
-        } frag;             // Fragmentation header
-    } un;
-};
 
 
 
@@ -91,13 +52,13 @@ int main()
         return -1;
     }
     
-    cout<<"Enter the number of packets to be captured: ";
+    /*cout<<"Enter the number of packets to be captured: ";
     int numOfPackets;
     cin>>numOfPackets;
-    cout<<endl;
+    cout<<endl;*/
     // starting the packet capture loop 
     // -1 instead of numOfPackets to capture indefinitely
-    pcap_loop(handle,numOfPackets,callback,NULL);
+    pcap_loop(handle,-1,callback,NULL);
     
     // closing the device
     pcap_close(handle);
@@ -240,6 +201,44 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
                 cout << endl<<endl<<endl;
             }
         }
+
+        else if(packet[i]==4) // checking for IP protocol
+        {
+            // extracting the IP protocol from the packet
+            const struct ip_header* ip = (const struct ip_header*)(packet + i + sizeof(uint8_t));
+            // printing the IP header fields
+            cout << "IP header:" << endl;
+            cout << "  Version: " << (int)(ip->version) << endl;
+            cout << "  Header length: " << (int)ip->header_len * 4 << " bytes" << endl;
+            cout << "  Type of service: " << (int)ip->tos << endl;
+            cout << "  Total length: " << ntohs(ip->total_length) <<" bytes" << endl;
+            cout << "  Identification: " << ntohs(ip->id) << endl;
+            cout << "  More fragments: " << (int)ip->more_fragment << endl;
+            cout << "  Don't fragments " << (int)ip->dont_fragment << endl;
+            cout << "  Fragmentation offset: " << (int)((ntohs(ip->frag_offset) & 0x1FFF) * 8) << " bytes" << endl;
+            cout << "  Time to live: " << (int)ip->time_to_live << endl;
+            cout << "  Protocol: " << (int)ip->protocol << endl;
+            cout << "  Checksum: " << ntohs(ip->checksum) << endl;
+            cout << "  Source address: " << inet_ntoa(ip->source) << endl;
+            cout << "  Destination address: " << inet_ntoa(ip->destination) << endl << endl;
+
+            // printing the payload
+            const u_char *payload = packet + i + sizeof(uint8_t) + sizeof(ip_header);
+            int payload_len = header->len - (i + sizeof(uint8_t) + sizeof(ip_header));
+            if (payload_len > 0) 
+            {
+                cout << "Payload:" << endl;
+                for (int i = 0; i < payload_len; i++) 
+                {
+                    printf("%02x ", payload[i]);
+                    if ((i + 1) % 16 == 0) 
+                    {
+                        cout << endl;
+                    }
+                }
+                cout << endl << endl << endl;
+            }
+        }
         // updating the count for the protocol
         protocols[protocol]++;
     }
@@ -261,18 +260,5 @@ void callback(u_char *user, const struct pcap_pkthdr *header, const u_char *pack
 
 
 
-/*
- This code uses the pcap library to open a network device for packet
- sniffing and register a callback function that will be called for each
- packet received. The callback function analyzes the packet and updates a
- map that tracks the number of packets for each protocol. The final
- results are printed after all packets have been processed.
- 
- the pcap_findalldevs function is used to find all available network
- devices. The first device is then used for packet sniffing.
- Additionally, the device list returned by pcap_findalldevs needs to be
- freed using the pcap_freealldevs function after it is no longer needed.
- */
 
-// g++ -std=c++2a sniffer.cpp -lpcap
-
+// g++ sniffer.cpp -lpcap
