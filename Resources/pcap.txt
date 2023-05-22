@@ -1,3 +1,0 @@
-#PCAP resources:
-a. https://www.winpcap.org/docs/docs_40_2/html/group__wpcap__def.html
-b. https://www.tcpdump.org/pcap.html
