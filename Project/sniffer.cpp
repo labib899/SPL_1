@@ -11,6 +11,7 @@
 #include "protocols/icmp_header.h"
 #include "protocols/ip_header.h"
 #include "protocols/http_parser.h"
+#include "protocols/dns_parser.h"
 
 
 
@@ -28,6 +29,7 @@ map<uint,int> ack_map;
 
 
 
+// function for capturing packets
 void got_packet(u_char *user,const struct pcap_pkthdr *header,const u_char *packet);
 
 
@@ -35,7 +37,7 @@ void got_packet(u_char *user,const struct pcap_pkthdr *header,const u_char *pack
 
 
 int main()
-{
+{   
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_if_t *devices, *device;
     
@@ -204,27 +206,42 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
             //packet+=sizeof(udp_header); // jump over udp header
 
 
-            // printing the UDP header fields
-            printUDPHeader(udp);
+            bool isDNS=(udp->source_port==htons(53) || udp->dest_port==htons(53));
 
-
-            // Printing UDP payload
-            const u_char* payload = packet+sizeof(eth_header)+sizeof(ip_header)+sizeof(udp_header);
-            int payload_len = ntohs(udp->length) - sizeof(udp_header); 
-
-
-            if (payload_len > 0) 
+            if(isDNS)
             {
-                cout << "Payload:" << endl;
-                for (int j = 0; j < payload_len; j++) 
+                // parsing DNS packet
+                const u_char* dnsPayload = packet + sizeof(eth_header) + sizeof(ip_header) + sizeof(udp_header);
+                int dnsPayloadLen = ntohs(udp->length) - sizeof(udp_header);
+
+                //cout << "DNS:" << endl;
+                parseDNSPacket(dnsPayload, dnsPayloadLen);
+            }
+
+            else
+            {
+                // printing the UDP header fields
+                printUDPHeader(udp);
+
+
+                // Printing UDP payload
+                const u_char* payload = packet+sizeof(eth_header)+sizeof(ip_header)+sizeof(udp_header);
+                int payload_len = ntohs(udp->length) - sizeof(udp_header); 
+
+
+                if (payload_len > 0) 
                 {
-                    printf("%02x ", payload[j]);
-                    if ((j + 1) % 16 == 0) 
+                    cout << "Payload:" << endl;
+                    for (int j = 0; j < payload_len; j++) 
                     {
-                        cout << endl;
+                        printf("%02x ", payload[j]);
+                        if ((j + 1) % 16 == 0) 
+                        {
+                            cout << endl;
+                        }
                     }
+                    cout << endl<<endl<<endl;
                 }
-                cout << endl<<endl<<endl;
             }
         }
 
