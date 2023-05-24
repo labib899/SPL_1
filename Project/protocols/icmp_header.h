@@ -16,37 +16,24 @@ using namespace std;
 // ICMP header structure
 struct icmp_header 
 {
-    uint8_t type;          // ICMP message type
-    uint8_t code;          // Sub-code associated with the message
-    uint16_t checksum;     // ICMP message checksum
-    union 
-    {
-        struct 
-        {
-            uint16_t id;    // ICMP identification field
-            uint16_t seq;   // ICMP sequence number field
-        } echo; 
-                    // Echo Request/Reply header
-        uint32_t gateway;   // Gateway address
+    uint8_t type;          // 8 bits
+    uint8_t code;          // 8 bits
+    uint16_t checksum;     // 16 bits
 
-        struct 
-        {
-            uint16_t unused; // Unused field
-            uint16_t mtu;    // Path MTU discovery maximum segment size
-        } frag;             // Fragmentation header
-    } un;
+    uint16_t id;    // identification field
+    uint16_t seq;   // sequence number field
 };
 
 
 
 void printICMPHeader(struct icmp_header* icmp)
 {
-    //cout << "ICMP Header:" << endl;
+    cout << "ICMP Header:" << endl;
     cout << " Type: " << (int)icmp->type << endl;
     cout << " Code: " << (int)icmp->code << endl;
     cout << " Checksum: " << ntohs(icmp->checksum) << endl;
-    cout << " Identifier: " << ntohs(icmp->un.echo.id) << endl;
-    cout << " Sequence Number: " << ntohs(icmp->un.echo.seq) << endl<<endl;
+    cout << " Identifier: " << ntohs(icmp->id) << endl;
+    cout << " Sequence Number: " << ntohs(icmp->seq) << endl<<endl;
 }
 
 
