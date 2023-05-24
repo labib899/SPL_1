@@ -23,9 +23,11 @@ using namespace std;
 
 
 
-
+// keeping track of protocol numbers
+map<string,int> protocols;
 // to keep track lost packets
 map<uint,int> ack_map;
+int dropped=0;
 
 
 
@@ -33,11 +35,37 @@ map<uint,int> ack_map;
 void got_packet(u_char *user,const struct pcap_pkthdr *header,const u_char *packet);
 
 
+// function to display protocols
+void display_protocols()
+{
+    cout<<"Protocols:"<<endl;
+    
+    for(auto protocol:protocols)
+    {
+        cout<<protocol.ff<<": "<<protocol.ss<<endl;
+    }
+
+    cout<<dropped<<" packets may have lost "<<endl;
+}
+
+
+// signal handler for interruption (ctrl+c)
+void signal_handler(int signum)
+{
+    if(signum==SIGINT)
+    {
+        display_protocols();
+        exit(signum);
+    }
+}
+
 
 
 
 int main()
 {   
+    signal(SIGINT,signal_handler);
+
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_if_t *devices, *device;
     
@@ -83,6 +111,8 @@ int main()
     // freeing the device list
     pcap_freealldevs(devices);
 
+    // display protocol numbers
+    display_protocols();
 
     
     return 0;
@@ -99,10 +129,14 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
     struct eth_header* eth=(struct eth_header*) packet;
     //packet+=sizeof(eth_header); // jump over ethernet header (14 bytes)
 
+    string protocol;
 
     // 0x0800 is IP type
     if(ntohs(eth->ether_type)==0x0800)    
-    {
+    {   
+        protocol="IP";
+        protocols[protocol]++;
+
         struct ip_header *ip=(struct ip_header*) (packet+sizeof(eth_header));
         printIPHeader(ip);
         //packet+=sizeof(ip_header); // jump over ip header
@@ -136,6 +170,9 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
 
             if (isHTTP) 
             {   
+                protocol="HTTP";
+                protocols[protocol]++;
+
                 // Extract the HTTP payload
                 const u_char* httpPayload = packet+sizeof(eth_header)+sizeof(ip_header)+sizeof(tcp_header);
                 int httpPayloadLen = header->caplen - (sizeof(eth_header)+sizeof(ip_header)+sizeof(tcp_header));
@@ -165,6 +202,9 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
 
             else
             {   
+                protocol="TCP";
+                protocols[protocol]++;
+
                 // printing TCP header fields
                 printTCPHeader(tcp);
 
@@ -193,6 +233,7 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
                 if(ack_map[ACK]>3)
                 {
                     cout<<"Triple duplicate ACKs detected. Packet loss may have occurred"<<endl<<endl<<endl;
+                    dropped++;
                     ack_map[ACK]=0; // resetting
                 }
             }
@@ -209,8 +250,11 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
             bool isDNS=(udp->source_port==htons(53) || udp->dest_port==htons(53));
 
             if(isDNS)
-            {
-                // parsing DNS packet
+            {   
+                protocol="DNS";
+                protocols[protocol]++;
+
+                // Parsing DNS packet
                 const u_char* dnsPayload = packet + sizeof(eth_header) + sizeof(ip_header) + sizeof(udp_header);
                 int dnsPayloadLen = ntohs(udp->length) - sizeof(udp_header);
 
@@ -219,7 +263,10 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
             }
 
             else
-            {
+            {   
+                protocol="UDP";
+                protocols[protocol]++;
+
                 // printing the UDP header fields
                 printUDPHeader(udp);
 
@@ -249,6 +296,9 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
 
         else if(ip->protocol==1) // IPPROTO_ICMP
         {   
+            protocol="ICMP";
+            protocols[protocol]++;
+
             // extracting the ICMP header from the packet
             struct icmp_header* icmp = (struct icmp_header*) (packet+sizeof(eth_header)+sizeof(ip_header));
             //packet+=sizeof(icmp_header);
@@ -275,6 +325,8 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
                 }
                 cout << endl<<endl<<endl;
             }
+
+            else protocol="Unknown";
         }
 
         // printing packet length
@@ -287,8 +339,6 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
     }
 
 }
-
-
 
 
 
