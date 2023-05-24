@@ -25,6 +25,7 @@ using namespace std;
 
 // keeping track of protocol numbers
 map<string,int> protocols;
+
 // to keep track lost packets
 map<uint,int> ack_map;
 int dropped=0;
@@ -37,7 +38,8 @@ void got_packet(u_char *user,const struct pcap_pkthdr *header,const u_char *pack
 
 // function to display protocols
 void display_protocols()
-{
+{   
+    cout<<endl;
     cout<<"Protocols:"<<endl;
     
     for(auto protocol:protocols)
@@ -45,7 +47,8 @@ void display_protocols()
         cout<<protocol.ff<<": "<<protocol.ss<<endl;
     }
 
-    cout<<dropped<<" packets may have lost "<<endl;
+    cout<<endl;
+    cout<<dropped<<" packets may have lost "<<endl<<endl;
 }
 
 
@@ -326,7 +329,11 @@ void got_packet(u_char *user, const struct pcap_pkthdr *header, const u_char *pa
                 cout << endl<<endl<<endl;
             }
 
-            else protocol="Unknown";
+            else 
+            {
+                protocol="Unknown";
+                protocols[protocol]++;
+            }
         }
 
         // printing packet length
