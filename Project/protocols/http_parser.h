@@ -207,11 +207,26 @@ HttpResponse parseHttpResponse(const string& httpResponse)
 
 
 
-void printHttpRequest(const HttpRequest& request)
-{
+void printHttpRequest(HttpRequest& request)
+{   
+    bool f=1;
+
+    if(request.method.empty()) f=0;
+    if(request.url.empty()) f=0;
+    if(request.version.empty()) f=0;
+
+    if(f==0) return;
+
     // printing the parsed request
     cout << "HTTP Request:" << endl;
-    cout << "Method: " << request.method << endl;
+
+    cout << "Method: " ;
+    if(request.method.find("GET")) cout<<"GET"<<endl;
+    else if(request.method.find("POST")) cout<<"POST"<<endl;
+    else if(request.method.find("HEAD")) cout<<"HEAD"<<endl;
+    else if(request.method.find("PUT")) cout<<"PUT"<<endl;
+    else if(request.method.find("DELETE")) cout<<"DELETE"<<endl;
+
     cout << "URL: " << request.url << endl;
     cout << "Version: " << request.version << endl;
     //cout << "Headers:" << endl;
@@ -230,11 +245,28 @@ void printHttpRequest(const HttpRequest& request)
 
 
 
-void printHttpResponse(const HttpResponse& response)
-{
+void printHttpResponse(HttpResponse& response)
+{   
+    bool f=1;
+
+    if(response.version.empty()) f=0;
+    if(response.statusCode.empty()) f=0;
+    if(response.statusMessage.empty()) f=0;
+
+    if(f==0) return;
+
     // printing the parsed response
     cout << "HTTP Response:" << endl;
-    cout << "Version: " << response.version << endl;
+
+    cout << "Version: " ;
+
+    int i=response.version.find("HTTP");
+    if(i!=-1)
+    {
+        response.version.erase(0,i);
+    }
+    cout<<response.version<<endl;
+
     cout << "Status Code: " << response.statusCode << endl;
     cout << "Status Message: " << response.statusMessage << endl;
     //cout << "Headers:" << endl;
